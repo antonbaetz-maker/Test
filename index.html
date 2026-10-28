@@ -66,6 +66,7 @@
     }
     button:active { transform: scale(0.95); opacity: 0.8; }
     .minus { background: var(--minus); color: var(--text); }
+    button:disabled { opacity: 0.35; cursor: default; transform: none; }
     .plus { background: var(--accent); color: var(--accent-text); }
 
     input[type="date"], textarea {
@@ -125,7 +126,10 @@
     function load() {
       try {
         const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-        return { ...DEFAULT_STATE, ...saved };
+        const state = { ...DEFAULT_STATE, ...saved };
+        state.gplus = Math.max(0, state.gplus);
+        state.kumiko = Math.max(0, state.kumiko);
+        return state;
       } catch {
         return { ...DEFAULT_STATE };
       }
@@ -144,6 +148,7 @@
     function render() {
       document.querySelectorAll(".counter").forEach((el) => {
         el.querySelector(".value").textContent = state[el.dataset.key];
+        el.querySelector(".minus").disabled = state[el.dataset.key] === 0;
       });
       notes.value = state.notes;
       date.value = state.date;
@@ -152,7 +157,7 @@
     document.querySelectorAll(".counter").forEach((el) => {
       el.querySelectorAll("button").forEach((btn) => {
         btn.addEventListener("click", () => {
-          state[el.dataset.key] += Number(btn.dataset.step);
+          state[el.dataset.key] = Math.max(0, state[el.dataset.key] + Number(btn.dataset.step));
           save();
           render();
         });

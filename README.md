@@ -1,6 +1,6 @@
 # Zähler – iPhone-Web-App
 
-Zwei Zähler („G+“ und „Kumiko“) mit + und −, ein Datumsfeld, ein Notizfeld und ein
+Zwei Zähler („G+“ und „Kumiko“) mit + und − (nicht unter 0), ein Datumsfeld, ein Notizfeld und ein
 Button „Alles zurücksetzen“. Alle Werte werden auf dem Gerät gespeichert und bleiben
 beim Schließen und erneuten Öffnen erhalten. Die App funktioniert auch offline.
 
