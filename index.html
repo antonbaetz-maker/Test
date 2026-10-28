@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Zähler</title>
+  <meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Zähler">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="icons/icon-192.png">
+  <style>
+    :root {
+      --bg: #f2f2f7;
+      --card: #ffffff;
+      --text: #1c1c1e;
+      --muted: #6e6e73;
+      --line: #d1d1d6;
+      --accent: #0a84ff;
+      --accent-text: #ffffff;
+      --minus: #e5e5ea;
+      --danger: #ff3b30;
+      color-scheme: light dark;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #000000;
+        --card: #1c1c1e;
+        --text: #f2f2f7;
+        --muted: #98989f;
+        --line: #38383a;
+        --minus: #2c2c2e;
+        --danger: #ff453a;
+      }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font: 17px/1.4 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+      -webkit-text-size-adjust: 100%;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      padding: calc(env(safe-area-inset-top) + 16px) calc(env(safe-area-inset-right) + 16px)
+               calc(env(safe-area-inset-bottom) + 24px) calc(env(safe-area-inset-left) + 16px);
+    }
+    main { max-width: 480px; margin: 0 auto; display: grid; gap: 16px; }
+    h1 { font-size: 34px; font-weight: 700; margin: 8px 4px 0; letter-spacing: -0.5px; }
+    .card { background: var(--card); border-radius: 16px; padding: 16px; }
+    .label { font-size: 13px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--muted); margin: 0 0 8px; }
+
+    .counters { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .counter { text-align: center; display: grid; gap: 12px; }
+    .counter h2 { margin: 0; font-size: 20px; font-weight: 600; }
+    .value { font-size: 56px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1; }
+    .buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    button {
+      font: inherit; border: 0; border-radius: 12px; cursor: pointer;
+      min-height: 52px; font-size: 28px; font-weight: 600;
+      transition: transform 0.08s ease, opacity 0.08s ease;
+    }
+    button:active { transform: scale(0.95); opacity: 0.8; }
+    .minus { background: var(--minus); color: var(--text); }
+    .plus { background: var(--accent); color: var(--accent-text); }
+
+    input[type="date"], textarea {
+      width: 100%; font: inherit; color: var(--text); background: transparent;
+      border: 1px solid var(--line); border-radius: 10px; padding: 12px;
+    }
+    input[type="date"] { min-height: 48px; -webkit-appearance: none; appearance: none; }
+    textarea { min-height: 140px; resize: vertical; }
+    input:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-color: transparent; }
+
+    .reset {
+      width: 100%; background: var(--card); color: var(--danger);
+      font-size: 17px; font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Zähler</h1>
+
+    <section class="counters">
+      <div class="card counter" data-key="gplus">
+        <h2>G+</h2>
+        <div class="value" aria-live="polite">0</div>
+        <div class="buttons">
+          <button class="minus" data-step="-1" aria-label="G+ verringern">−</button>
+          <button class="plus" data-step="1" aria-label="G+ erhöhen">+</button>
+        </div>
+      </div>
+      <div class="card counter" data-key="kumiko">
+        <h2>Kumiko</h2>
+        <div class="value" aria-live="polite">0</div>
+        <div class="buttons">
+          <button class="minus" data-step="-1" aria-label="Kumiko verringern">−</button>
+          <button class="plus" data-step="1" aria-label="Kumiko erhöhen">+</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <label class="label" for="date">Datum</label>
+      <input type="date" id="date">
+    </section>
+
+    <section class="card">
+      <label class="label" for="notes">Notizen</label>
+      <textarea id="notes" placeholder="Freitext …"></textarea>
+    </section>
+
+    <button class="reset" id="reset">Alles zurücksetzen</button>
+  </main>
+
+  <script>
+    const STORAGE_KEY = "zaehler-state-v1";
+    const DEFAULT_STATE = { gplus: 0, kumiko: 0, notes: "", date: "" };
+
+    function load() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        return { ...DEFAULT_STATE, ...saved };
+      } catch {
+        return { ...DEFAULT_STATE };
+      }
+    }
+
+    function save() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch {}
+    }
+
+    const state = load();
+    const notes = document.getElementById("notes");
+    const date = document.getElementById("date");
+
+    function render() {
+      document.querySelectorAll(".counter").forEach((el) => {
+        el.querySelector(".value").textContent = state[el.dataset.key];
+      });
+      notes.value = state.notes;
+      date.value = state.date;
+    }
+
+    document.querySelectorAll(".counter").forEach((el) => {
+      el.querySelectorAll("button").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          state[el.dataset.key] += Number(btn.dataset.step);
+          save();
+          render();
+        });
+      });
+    });
+
+    notes.addEventListener("input", () => { state.notes = notes.value; save(); });
+    date.addEventListener("change", () => { state.date = date.value; save(); });
+
+    document.getElementById("reset").addEventListener("click", () => {
+      if (!confirm("Beide Zähler auf 0 setzen und Datum und Notizen leeren?")) return;
+      Object.assign(state, DEFAULT_STATE);
+      save();
+      render();
+    });
+
+    render();
+
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("sw.js");
+    }
+  </script>
+</body>
+</html>
